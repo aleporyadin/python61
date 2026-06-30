@@ -1,0 +1,29 @@
+{
+    "next_course_id": 2,
+    "students": [
+        {
+            "id": "ST-D2E014A3",
+            "name": "John",
+            "age": 20,
+            "email": "john@e",
+            "course_ids": [
+                1
+            ],
+            "grades": {
+                "1": [
+                    10
+                ]
+            }
+        }
+    ],
+    "courses": [
+        {
+            "id": 1,
+            "title": "Python",
+            "teacher": "Olek",
+            "student_ids": [
+                "ST-D2E014A3"
+            ]
+        }
+    ]
+}
