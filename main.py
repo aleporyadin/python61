@@ -198,6 +198,15 @@ class EducationCenter:
         self.students.append(s)
         return s
 
+    def edit_student(self, student_id, name, age, email):
+        s = self.find_student_by_id(student_id)
+        if s is None:
+            return False
+        s.name = name
+        s.age = age
+        s.email = email
+        return True
+
     def add_course(self, title, teacher):
         c = Course(self.next_course_id, title, teacher)
         self.courses.append(c)
@@ -336,13 +345,14 @@ class App:
             11: self.statistics_menu,
             12: self.save_menu,
             13: self.load_menu,
+            14: self.edit_student_menu,
             0: self.exit_program
         }
 
     def run(self):
         while self.is_running:
             self.show_main_menu()
-            choice = self.input_int("Ваш вибір: ", 0, 13)
+            choice = self.input_int("Ваш вибір: ", 0, 14)
             act = self.actions.get(choice)
             act()
 
@@ -364,6 +374,7 @@ class App:
         print("11. Статистика")
         print("12. Зберегти дані")
         print("13. Завантажити дані")
+        print("14. Редагувати студента")
         print("0. Вийти")
 
     def input_int(self, message, min_value=None, max_value=None):
@@ -468,6 +479,18 @@ class App:
 
         student = self.center.add_student(name, age, email)
         print(f"Студента додано. ID: {student.id}")
+
+    def edit_student_menu(self):
+        print("\n--- Редагування студента ---")
+        student_id = self.input_text("ID студента: ")
+        name = self.input_text("Ім'я: ")
+        age = self.input_int("Вік: ", 1, 120)
+        email = self.input_text("е-Пошта: ")
+        student = self.center.edit_student(student_id, name, age, email)
+        if student:
+            print("Студента змінено")
+        else:
+            print("Студента з таким ID не знайдено")
 
     def show_student_menu(self):
         print("\n--- Список студентів ---")
