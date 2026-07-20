@@ -183,6 +183,23 @@ class EducationCenter:
 
         return None
 
+    def edit_course(self, course_id, title, teacher):
+        c = self.find_course_by_id(course_id)
+        if c is None:
+            return False
+        c.title = title
+        c.teacher = teacher
+        return True
+
+    def delete_course(self, course_id):
+        c = self.find_course_by_id(course_id)
+        if c is None:
+            return False
+        self.courses.remove(c)
+        for s in self.students:
+            s.remove_course(course_id)
+        return True
+
     def find_students_by_name(self, name_part):
         res = []
         name_part = name_part.lower()
@@ -346,13 +363,18 @@ class App:
             12: self.save_menu,
             13: self.load_menu,
             14: self.edit_student_menu,
+            15: self.edit_course_menu,
+            16: self.delete_course_menu,
+            # 17:
+            # 18:
+            # 19:
             0: self.exit_program
         }
 
     def run(self):
         while self.is_running:
             self.show_main_menu()
-            choice = self.input_int("Ваш вибір: ", 0, 14)
+            choice = self.input_int("Ваш вибір: ", 0, 19)
             act = self.actions.get(choice)
             act()
 
@@ -375,6 +397,11 @@ class App:
         print("12. Зберегти дані")
         print("13. Завантажити дані")
         print("14. Редагувати студента")
+        print("15. Редагувати курс")
+        print("16. Видалити курс")
+        print("17. Відрахувати з курсу")
+        print("18. Фільтрація")
+        print("19. Звіт")
         print("0. Вийти")
 
     def input_int(self, message, min_value=None, max_value=None):
@@ -528,6 +555,25 @@ class App:
 
         for course in self.center.courses:
             self.print_course_details(course)
+
+    def edit_course_menu(self):
+        print("\n--- Редагування курсу ---")
+        course_id = self.input_int("ID курсу: ", 1)
+        title = self.input_text("Назва курсу: ")
+        teacher = self.input_text("Викладач: ")
+        course = self.center.edit_course(course_id, title, teacher)
+        if course:
+            print("Курс змінено")
+        else:
+            print("Курс з таким ID не знайдено")
+
+    def delete_course_menu(self):
+        print("\n--- Видалення курсу ---")
+        course_id = self.input_int("ID курсу: ", 1)
+        if self.center.delete_course(course_id):
+            print("Курс видалено")
+        else:
+            print("Курс з таким ID не знайдено")
 
     def enroll_student_menu(self):
         print("\n--- Запис студента на курс ---")
