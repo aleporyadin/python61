@@ -255,6 +255,17 @@ class EducationCenter:
         s.add_course(c.id)
         c.add_student(s.id)
 
+    def unenroll_from_the_course(self, student_id, course_id):
+        s = self.find_student_by_id(student_id)
+        c = self.find_course_by_id(course_id)
+        if s is None:
+            raise ValueError("Студента з таким ІД не знайдено")
+        if c is None:
+            raise ValueError("Курс з таким ІД не знайдено")
+        s.remove_course(c.id)
+        c.remove_student(s.id)
+        return True
+
     def add_grade_to_student(self, student_id, course_id, grade):
         s = self.find_student_by_id(student_id)
         c = self.find_course_by_id(course_id)
@@ -277,6 +288,27 @@ class EducationCenter:
         if len(self.students) == 0:
             return None
         return max(self.students, key=lambda s: s.average_grade())
+
+    def get_students_by_course(self, course_id):
+        res = []
+        for s in self.students:
+            if course_id in s.course_ids:
+                res.append(s)
+        return res
+
+    def get_students_by_average_grade(self, min_grade):
+        res = []
+        for s in self.students:
+            if s.average_grade() > min_grade:
+                res.append(s)
+        return res
+
+    def get_students_without_grades(self):
+        res = []
+        for s in self.students:
+            if len(s.grades) == 0:
+                res.append(s)
+        return res
 
     def get_student_without_courses(self):
         res = []
@@ -342,6 +374,96 @@ class EducationCenter:
         max_id = max(course.id for course in self.courses)
         return max_id + 1
 
+    def create_report(self, filename):
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write("ЗВІТ НАВЧАЛЬНОГО ЦЕНТРУ\n")
+            self.write_general_info(f)
+            self.write_students(f)
+            self.write_courses(f)
+            self.write_students_without_courses(f)
+            self.write_students_without_grades(f)
+            self.write_courses_info(f)
+
+    def write_general_info(self, file):
+        file.write("ЗАГАЛЬНА ІНФОРМАЦІЯ\n")
+        file.write(f"Кількість студентів: {len(self.students)}\n")
+        file.write(f"Кількість курсів: {len(self.courses)}\n")
+        file.write(f"Середній бал навчального центру: {self.get_avg_grade_of_center():.2f}\n")
+        best_student = self.get_best_student()
+        if best_student is None or best_student.average_grade() == 0:
+            file.write("Найкращий студент: немає оцінок\n")
+        else:
+            file.write(
+                f"Найкращий студент: {best_student.id}, "
+                f"{best_student.name}, "
+                f"середній бал: {best_student.average_grade():.2f}\n"
+            )
+        file.write("\n")
+
+    def write_students(self, file):
+        file.write("\nСПИСОК СТУДЕНТІВ\n")
+        for i, student in enumerate(self.students, start=1):
+            file.write(
+                f"{i}. {student.id}, {student.name}, "
+                f"{student.age} років, {student.email}, "
+                f"курсів: {len(student.course_ids)}, "
+                f"середній бал: {student.average_grade():.2f}\n"
+            )
+        file.write("\n")
+
+    def write_courses(self, file):
+        file.write("\nСПИСОК КУРСІВ\n")
+        for i, course in enumerate(self.courses, start=1):
+            file.write(
+            f"{i}. ID: {course.id}, "
+            f"Назва: {course.title}, "
+            f"Викладач: {course.teacher}, "
+            f"Студентів: {len(course.student_ids)}\n"
+            )
+        file.write("\n")
+
+    def write_students_without_courses(self, file):
+        file.write("\nСТУДЕНТИ БЕЗ КУРСІВ\n")
+        found = False
+        for i, student in enumerate(self.students, start=1):
+            if len(student.course_ids) == 0:
+                found = True
+                file.write(f"{i}. {student.id}, {student.name}, {student.email}\n")
+        if not found:
+            file.write("Студентів без курсів немає\n")
+        file.write("\n")
+
+    def write_students_without_grades(self, file):
+        file.write("\nСТУДЕНТИ БЕЗ ОЦІНОК\n")
+        students = self.get_students_without_grades()
+        if len(students) == 0:
+            file.write("Студентів без оцінок немає\n")
+        else:
+            for i, student in enumerate(students, start=1):
+                file.write(
+                    f"{i}. {student.id}, {student.name}, {student.email}\n"
+                )
+        file.write("\n")
+
+    def write_courses_info(self, file):
+        file.write("\nІНФОРМАЦІЯ ПО КУРСАХ\n")
+        for course in self.courses:
+            file.write(f"\nКУРС: {course.title}\n")
+            file.write(f"Викладач: {course.teacher}\n")
+            if len(course.student_ids) == 0:
+                file.write("На курс поки не записано студентів\n")
+            else:
+                file.write("Студенти:\n")
+                for i, student_id in enumerate(course.student_ids, start=1):
+                    student = self.find_student_by_id(student_id)
+                    if student is not None:
+                        file.write(
+                            f"{i}. {student.id}, "
+                            f"{student.name}, "
+                            f"середній бал за курс: "
+                            f"{student.average_grade_by_course(course.id):.2f}\n"
+                        )
+        file.write("\n")
 
 class App:
     def __init__(self):
@@ -365,9 +487,9 @@ class App:
             14: self.edit_student_menu,
             15: self.edit_course_menu,
             16: self.delete_course_menu,
-            # 17:
-            # 18:
-            # 19:
+            17: self.unenroll_from_the_course_menu,
+            18: self.filter_students_menu,
+            19: self.create_report_menu,
             0: self.exit_program
         }
 
@@ -400,9 +522,34 @@ class App:
         print("15. Редагувати курс")
         print("16. Видалити курс")
         print("17. Відрахувати з курсу")
-        print("18. Фільтрація")
+        print("18. Фільтрувати студентів")
         print("19. Звіт")
         print("0. Вийти")
+
+    def filter_students_menu(self):
+        print("\n--- Фільтрація студентів ---")
+        print("1. Студенти конкретного курсу")
+        print("2. Студенти із середнім балом вище заданого")
+        print("3. Студенти без оцінок")
+        print("4. Студенти без курсів")
+        print("0. Назад")
+        choice = self.input_int("Ваш вибір: ", 0, 4)
+        if choice == 0:
+            return
+        if choice == 1:
+            course_id = self.input_int("ID курсу: ", 1)
+            students = self.center.get_students_by_course(course_id)
+            self.print_students(students)
+        elif choice == 2:
+            min_grade = self.input_int("Мінімальний середній бал: ", 1, 12)
+            students = self.center.get_students_by_average_grade(min_grade)
+            self.print_students(students)
+        elif choice == 3:
+            students = self.center.get_students_without_grades()
+            self.print_students(students)
+        elif choice == 4:
+            students = self.center.get_student_without_courses()
+            self.print_students(students)
 
     def input_int(self, message, min_value=None, max_value=None):
         while True:
@@ -595,6 +742,22 @@ class App:
         except ValueError as e:
             print(e)
 
+    def unenroll_from_the_course_menu(self):
+        print("\n--- Відрахування студента з курсу ---")
+        if len(self.center.students) == 0:
+            print("Спочатку додайте студента")
+            return
+        if len(self.center.courses) == 0:
+            print("Спочатку додайте курс")
+            return
+        student_id = self.input_text("ID студента: ")
+        course_id = self.input_int("ID курсу: ", 1)
+        try:
+            self.center.unenroll_from_the_course(student_id, course_id)
+            print("Студента відраховано з курсу")
+        except ValueError as e:
+            print(e)
+
     def add_grade_menu(self):
         print("\n--- Додавання оцінки ---")
 
@@ -691,6 +854,15 @@ class App:
             print("Файл має неправильний JSON формат")
         except OSError as e:
             print(f"Не вдалося завантажити дані: {e}")
+
+    def create_report_menu(self):
+        print("\n--- Створення звіту ---")
+        filename = "report.txt"
+        try:
+            self.center.create_report(filename)
+            print(f"Звіт створено: {filename}")
+        except OSError as e:
+            print(f"Не вдалося зберегти дані: {e}")
 
     def exit_program(self):
         print("Роботу завершено")
